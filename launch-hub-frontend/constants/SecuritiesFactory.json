@@ -1,0 +1,1 @@
+[{"type":"event","anonymous":false,"name":"SecuritiesDeployed","inputs":[{"type":"address","name":"_securitiesAddr","indexed":false}]},{"type":"function","name":"deploy","constant":false,"payable":false,"inputs":[{"type":"string","name":"_uri"}],"outputs":[]}]

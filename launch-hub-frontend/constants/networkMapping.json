@@ -1,0 +1,16 @@
+{
+  "5": {
+    "Factory": ["0xBE1e444E5CE220628b3ee2Da7d2442385325Ac80"],
+    "Usdc": ["0x07865c6e87b9f70255377e024ace6630c1eaa37f"]
+  },
+  "80001": {
+    "SecuritiesFactory": ["0x646936FC3B9578305389a533591c25597f6a659F"],
+    "AccountFactory": ["0x50c037D2dbc947B7E194a277571122d6C6F42bF7"],
+    "Usdc": ["0x0fa8781a83e46826621b3bc094ea2a0212e71b23"],
+    "TT": ["0x79b7E6A15fEFBbAE25Ed0E7605Af449394A2Cc06"]
+  },
+  "81": {
+    "SecuritiesFactory": ["0xFd79D402b71Cb93Ab12928522abd2d6e430bB52A"],
+    "AccountFactory": ["0xe9ACf255423402001C3793D74889cff34F72C1B0"]
+  }
+}
