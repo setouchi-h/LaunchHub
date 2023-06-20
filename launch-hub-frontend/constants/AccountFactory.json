@@ -1,1 +1,20 @@
-[{"type":"event","anonymous":false,"name":"AccountDeployed","inputs":[{"type":"address","name":"_accountAddr","indexed":false}]},{"type":"function","name":"deploy","constant":false,"payable":false,"inputs":[{"type":"address","name":"_adminAddr"},{"type":"address","name":"_securitiesAddr"},{"type":"uint256","name":"_share"}],"outputs":[]}]
+[
+  {
+    "type": "event",
+    "anonymous": false,
+    "name": "AccountDeployed",
+    "inputs": [{ "type": "address", "name": "accountAddr", "indexed": false }]
+  },
+  {
+    "type": "function",
+    "name": "deploy",
+    "constant": false,
+    "payable": false,
+    "inputs": [
+      { "type": "address", "name": "_adminAddr" },
+      { "type": "address", "name": "_securitiesAddr" },
+      { "type": "uint256", "name": "_share" }
+    ],
+    "outputs": []
+  }
+]

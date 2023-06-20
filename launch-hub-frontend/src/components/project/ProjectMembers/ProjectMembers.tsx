@@ -3,18 +3,15 @@ import React from "react"
 import { SbtOwner } from "@/types/SbtOwner"
 
 type Props = {
-  projectMembers: SbtOwner[]
+  sbtOwners: SbtOwner[]
 }
 
-const ProjectMembers: React.FC<Props> = ({ projectMembers }) => {
-  console.log(projectMembers)
-
+const ProjectMembers: React.FC<Props> = ({ sbtOwners }) => {
   return (
     <ul>
-      {projectMembers.map((owner, index) => (
-        <li key={index} css={s.container}>
-          <p css={s.ownerName}>{owner.name}</p>
-          <p>{owner.amount}</p>
+      {sbtOwners.map((owner, index) => (
+        <li key={index}>
+          <p>{owner.name}</p>
         </li>
       ))}
     </ul>

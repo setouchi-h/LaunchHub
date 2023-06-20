@@ -1,6 +1,6 @@
-import { colors } from "@/styles/colors";
-import { dialogWidth } from "@/styles/constants";
-import { css } from "@emotion/react";
+import { colors } from "@/styles/colors"
+import { dialogWidth } from "@/styles/constants"
+import { css } from "@emotion/react"
 
 export const addNewTaskButtonStyle = css`
   border: solid 1px ${colors.divider};

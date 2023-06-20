@@ -8,14 +8,13 @@ import LoadingCircle from "../ui/LoadingCircle/LoadingCircle"
 import TaskBoard from "../task/TaskBoard"
 import Assignments from "../task/Assignments"
 import ProjectOverview from "../project/ProjectOverview/ProjectOverview"
-import ProjectMembers from "../project/ProjectMembers"
+import SbtOwners from "../project/ProjectMembers"
 import { useGetSbtHolders } from "@/models/project/useGetSbtHolders"
 import { useGetProject } from "@/models/project/useGetProject"
 import { useGetAssignment } from "@/models/project/useGetAssignment"
 import { useIsProjectOwner } from "@/models/project/useIsProjectOwner"
 import ProjectHeader from "../project/ProjectHeader"
 import ReceiveProceeds from "../project/ReceiveProceeds"
-import { useSetAttendingProjectState } from "@/states/attendingProjects"
 
 export default function ProjectPage() {
   const router = useRouter()
@@ -23,27 +22,26 @@ export default function ProjectPage() {
   const user = useUserValue()
   const [isVerified, setIsVerified] = useState<boolean>(false)
   const { project } = useGetProject(projectId)
-  const setAttendingProjects = useSetAttendingProjectState()
-  const sbtHolders = useGetSbtHolders()
+  const sbtHolders = useGetSbtHolders(project?.sbtAddress ?? "")
   const { assignmentApplications, submissions } = useGetAssignment(project)
   const isProjectOwner = useIsProjectOwner(project)
   const [_, setProjectIdQueryString] = useState<string>("")
   const projectTreasuryAddress = project?.vaultAddress ?? ""
 
-  // useEffect(() => {
-  //   setProjectIdQueryString((currentValue) => {
-  //     if (typeof projectId !== "string") {
-  //       return currentValue
-  //     }
-  //     if (!projectId) {
-  //       return currentValue
-  //     }
-  //     if (currentValue && projectId !== currentValue) {
-  //       router.reload()
-  //     }
-  //     return projectId
-  //   })
-  // }, [projectId])
+  useEffect(() => {
+    setProjectIdQueryString((currentValue) => {
+      if (typeof projectId !== "string") {
+        return currentValue
+      }
+      if (!projectId) {
+        return currentValue
+      }
+      if (currentValue && projectId !== currentValue) {
+        router.reload()
+      }
+      return projectId
+    })
+  }, [projectId])
 
   //set if user needs to enter invitation code
   useEffect(() => {
@@ -74,13 +72,6 @@ export default function ProjectPage() {
         value: user.uid,
         method: "union",
       })
-
-      setAttendingProjects((currentValue) => {
-        return [
-          ...currentValue,
-          project
-        ]
-      })
     }
   }
 
@@ -104,11 +95,11 @@ export default function ProjectPage() {
             </TabBar.Content>
 
             <TabBar.Content value="tasks">
-              <TaskBoard />
+              <TaskBoard project={project} />
             </TabBar.Content>
 
             <TabBar.Content value="project-members">
-              <ProjectMembers projectMembers={sbtHolders} />
+              <SbtOwners sbtOwners={sbtHolders} />
             </TabBar.Content>
 
             <TabBar.Content value="receive-proceeds">

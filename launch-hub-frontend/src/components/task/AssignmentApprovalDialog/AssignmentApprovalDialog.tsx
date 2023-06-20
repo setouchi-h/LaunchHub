@@ -20,11 +20,10 @@ import { updateSubmission } from "@/models/firestore/updateSubmission"
 import { z } from "zod"
 import { SubmitHandler, useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { ethers } from "ethers"
-import securitiesAbi from "../../../../constants/Securities.json"
-import { useUserValue } from "@/states/userState"
-import { useRouter } from "next/router"
+import { Web3Button } from "@thirdweb-dev/react"
 import { useGetProject } from "@/models/project/useGetProject"
+import { useRouter } from "next/router"
+import securitiesAbi from "../../../../constants/Securities.json"
 
 const formInputSchema = z.object({
   commentFromPrjectOwner: z.string(),
@@ -49,7 +48,6 @@ const AssignmentApprovalDialog: React.FC<Props> = ({
   const { projectId } = router.query
   const { project } = useGetProject(projectId)
   const sbtAddr = project?.sbtAddress
-  const user = useUserValue()
   const task = tasks.find(($0) => $0.id === assignment.taskId)
   const setProject = useSetProjectState()
   const setAssignmentApplications = useSetAssignmentApplicationsState()
@@ -152,8 +150,6 @@ const AssignmentApprovalDialog: React.FC<Props> = ({
         },
       })
 
-      await mintSbt(assignment.userId, task.bountySbt)
-
       //set project state
       setProject((currentValue) => {
         if (!currentValue) {
@@ -191,29 +187,6 @@ const AssignmentApprovalDialog: React.FC<Props> = ({
     setIsDialogOpen(false)
     setIsButtonEnabled(true)
     setIsButtonLoading(false)
-  }
-
-  const mintSbt = async (to: string, sbtAmount: number) => {
-    if (!user?.smartAccount) {
-      console.log("smartAccount is not found")
-      return
-    }
-    try {
-      const sbtInterface = new ethers.utils.Interface(securitiesAbi)
-      const encodedMintData = sbtInterface.encodeFunctionData("mint", [sbtAmount, to])
-      const tx = {
-        to: sbtAddr!,
-        data: encodedMintData,
-      }
-      const txResponse = await user?.smartAccount.sendTransaction({
-        transaction: tx,
-      })
-      console.log("userOp hash: ", txResponse.hash)
-      const txReciept = await txResponse.wait()
-      console.log("tx: ", txReciept)
-    } catch (error) {
-      console.log(error)
-    }
   }
 
   const onReject: SubmitHandler<AssignmentApproval> = async (data) => {
@@ -386,13 +359,28 @@ const AssignmentApprovalDialog: React.FC<Props> = ({
 
                       <Spacer size={30} />
                       <div css={s.buttonGroupStyle}>
-                        <Button
-                          onClick={handleSubmit(onApprove)}
-                          isEnabled={isButtonEnabled}
-                          isLoading={isButtonLoading}
-                        >
-                          Approve
-                        </Button>
+                        {type === "assignmentApplication" ? (
+                          <Button
+                            onClick={handleSubmit(onApprove)}
+                            isEnabled={isButtonEnabled}
+                            isLoading={isButtonLoading}
+                          >
+                            Approve
+                          </Button>
+                        ) : (
+                          <Web3Button
+                            contractAddress={sbtAddr!}
+                            contractAbi={securitiesAbi}
+                            action={(contract) => {
+                              handleSubmit(onApprove)
+                              contract.call("mint", [task.bountySbt, assignment.userId])
+                            }}
+                            onError={(error) => console.log(error)}
+                            // isDisabled={!isButtonEnabled}
+                          >
+                            Approve and Mint SBT
+                          </Web3Button>
+                        )}
                         <Spacer size={6} isVertical={false} />
                         <Button
                           onClick={handleSubmit(onReject)}

@@ -1,77 +1,61 @@
-import React, { createContext, useEffect, useRef, useState } from "react"
-import { useUserState } from "@/states/userState"
-import UserNameDialog from "../user/UserNameDialog"
-import dynamic from "next/dynamic"
-import SmartAccount from "@biconomy/smart-account"
-import { asyncTask } from "@/utils/asyncTask"
 import { signIn } from "@/models/auth/signIn"
-import SocialLogin from "@biconomy/web3-auth"
+import { asyncTask } from "@/utils/asyncTask"
+import React, { useEffect } from "react"
+import { useUserState } from "@/states/userState"
+import LoadingCircle from "../ui/LoadingCircle"
+import UserNameDialog from "../user/UserNameDialog"
+import Header from "../common/Header"
+import { useAddress } from "@thirdweb-dev/react"
 
 type Props = {
   children: React.ReactNode
 }
 
-export const SmartAccountContext = createContext<{
-  smartAccount: SmartAccount | null
-  setSmartAccount: React.Dispatch<React.SetStateAction<SmartAccount | null>>
-  provider: any
-  setProvider: React.Dispatch<React.SetStateAction<any>>
-}>({ smartAccount: null, setSmartAccount: () => {}, provider: null, setProvider: () => {} })
-
-export const SocialLoginContext = createContext<{
-  sdkRef: React.MutableRefObject<SocialLogin | null | undefined>
-}>({ sdkRef: { current: null } })
-
 const AuthProvider: React.FC<Props> = ({ children }) => {
+  const account = useAddress()
   const [user, setUser] = useUserState()
   const hasNoUserName = user && !user.name
-  const [smartAccount, setSmartAccount] = useState<SmartAccount | null>(null)
-  const [provider, setProvider] = useState<any>(null)
-  const sdkRef = useRef<SocialLogin | null | undefined>(null)
-  const [isSetting, setIsSetting] = useState<boolean>(false)
-
-  const SocialLoginDynamic = dynamic(() => import("./Scw").then((res) => res.default), {
-    ssr: false,
-  })
-
-  console.log(user)
 
   useEffect(() => {
-    // user setup
-    if (smartAccount && sdkRef.current) {
-      const address = smartAccount?.address
-      if (!address) {
-        return
-      }
-      asyncTask(async () => {
-        const authenticatedUser = await signIn({ address: address })
-        if (!authenticatedUser) {
-          return
-        }
-        setUser({
-          ...authenticatedUser,
-          socialLogin: sdkRef.current,
-          smartAccount: smartAccount,
-          provider: provider,
+    if (user) {
+      //user is already signed in
+      //do nothing
+    } else {
+      const address = account
+      if (address) {
+        //connected, sign in
+        asyncTask(async () => {
+          const authenticatedUser = await signIn({ address: address })
+          setUser(authenticatedUser)
         })
-      })
+      } else {
+        //not connected, user needs to connect and sign in manually
+        setUser(null)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [smartAccount])
+  }, [account])
 
   return (
     <>
-      <SocialLoginContext.Provider value={{ sdkRef }}>
-        <SmartAccountContext.Provider
-          value={{ smartAccount, setSmartAccount, provider, setProvider }}
-        >
-          <SocialLoginDynamic isSetting={isSetting} setIsSetting={setIsSetting} />
-          <React.Fragment>
-            {user ? hasNoUserName ? <UserNameDialog /> : children : isSetting ? <></> : <></>}
-          </React.Fragment>
-          {/* )} */}
-        </SmartAccountContext.Provider>
-      </SocialLoginContext.Provider>
+      {user === undefined ? (
+        <div>
+          <p>Loading...</p>
+          <LoadingCircle />
+        </div>
+      ) : (
+        <React.Fragment>
+          <Header />
+          {user ? (
+            hasNoUserName ? (
+              <UserNameDialog />
+            ) :
+              children
+          ) : (
+            <>Landing page</>
+          )}
+        </React.Fragment>
+      )}
     </>
   )
 }

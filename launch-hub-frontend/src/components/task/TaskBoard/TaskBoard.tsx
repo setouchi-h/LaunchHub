@@ -2,16 +2,16 @@ import React, { useState } from "react"
 import * as s from "./style"
 import DroppableTaskColumn from "../DroppableTaskColumn/DroppableTaskColumn"
 import * as ScrollArea from "@radix-ui/react-scroll-area"
-import Button from "@/components/ui/Button"
 import Spacer from "@/components/ui/Spacer"
+import { Project } from "@/types/Project"
+import Button from "@/components/ui/Button"
 import { Configuration, OpenAIApi } from "openai"
-import { useRouter } from "next/router"
-import { useGetProject } from "@/models/project/useGetProject"
 
-const TaskBoard: React.FC = () => {
-  const router = useRouter()
-  const { projectId } = router.query
-  const { project } = useGetProject(projectId)
+type Props = {
+  project: Project
+}
+
+const TaskBoard: React.FC<Props> = ({ project }) => {
   const [response, setResponse] = useState<any>()
   const [isLoading, setIsLoading] = useState<boolean>(false)
 

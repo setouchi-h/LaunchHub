@@ -4,23 +4,19 @@ import ErrorMessage from "@/components/ui/ErrorMessage"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { useContext, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/router"
 import { PATHS } from "../paths"
 import { usePageLeaveConfirmation } from "@/models/project/usePageLeaveConfirmation"
 import { useEditingProjectState } from "@/states/editingProjectState"
 import securitiesFactoryAbi from "../../../../constants/SecuritiesFactory.json"
-import securitiesAbi from "../../../../constants/Securities.json"
 import networkConfig from "../../../../constants/networkMapping.json"
-import { useStorageUpload } from "@thirdweb-dev/react"
+import { SmartContract, Web3Button, useStorageUpload } from "@thirdweb-dev/react"
 import { ethers } from "ethers"
 import { updateProject } from "@/models/firestore/updateProject"
 import { contractAddressesInterface } from "../../../types/networkAddress"
+import { Astar } from "@thirdweb-dev/chains"
 import PageContainer from "@/components/ui/PageContainer"
-import LoadingCircle from "@/components/ui/LoadingCircle/LoadingCircle"
-import Button from "@/components/ui/Button/Button"
-import { SmartAccountContext } from "../../auth/AuthProvider"
-import { ChainId } from "@biconomy/core-types"
 
 const formInputSchema = z.object({
   sbtTokenName: z.string().nonempty({ message: "Required" }),
@@ -30,8 +26,6 @@ const formInputSchema = z.object({
 type NewProjectAboutSbt = z.infer<typeof formInputSchema>
 
 export default function NewProjectAboutSbtPage() {
-  const { smartAccount } = useContext(SmartAccountContext)
-
   const router = useRouter()
   const metadataTemplate = {
     name: "",
@@ -40,14 +34,13 @@ export default function NewProjectAboutSbtPage() {
   }
 
   const addresses: contractAddressesInterface = networkConfig
-  const chainString = ChainId.POLYGON_MUMBAI.toString()
+  const chainString = Astar.chainId.toString()
   // sbt factory address
   const sbtFactoryAddr = addresses[chainString].SecuritiesFactory[0]
   const { mutateAsync: upload } = useStorageUpload()
   const [editingProject, setEditingProject] = useEditingProjectState()
   const [isButtonEnabled, setIsButtonEnabled] = useState<boolean>(true)
   const [isPageLeaveAllowed, setIsPageLeaveAllowed] = useState<boolean>(false)
-  const [isLoading, setIsLoading] = useState<boolean>(false)
   usePageLeaveConfirmation(isPageLeaveAllowed)
   const {
     register,
@@ -55,70 +48,30 @@ export default function NewProjectAboutSbtPage() {
     formState: { errors },
   } = useForm<NewProjectAboutSbt>({ resolver: zodResolver(formInputSchema) })
 
-  const onDeploySbt = async () => {
+  const onDeploySbt = async (contract: SmartContract<ethers.BaseContract>) => {
     setIsPageLeaveAllowed(true)
-    setIsLoading(true)
+    const sbtTokenName = getValues("sbtTokenName")
+    const sbtImage = getValues("sbtImage")
+    const uri = await uploadToIpfs({ tokenName: sbtTokenName, tokenImage: sbtImage })
+    const tx = await contract.call("deploy", [uri])
+    const sbtAddress = tx.receipt.events[0].address as string
+
     setIsButtonEnabled(false)
-    if (!smartAccount) return
-    try {
-      const sbtTokenName = getValues("sbtTokenName")
-      const sbtImage = getValues("sbtImage")
-      const uri = await uploadToIpfs({ tokenName: sbtTokenName, tokenImage: sbtImage })
+    setIsPageLeaveAllowed(true)
 
-      const securitiesFactoryInterfacen = new ethers.utils.Interface(securitiesFactoryAbi)
-      const encodedDeploySbtData = securitiesFactoryInterfacen.encodeFunctionData("deploy", [uri])
-      const tx = {
-        to: sbtFactoryAddr,
-        data: encodedDeploySbtData,
-      }
-      const txResponse = await smartAccount.sendTransaction({ transaction: tx })
-      console.log("userOp hash: ", txResponse.hash)
-      const txReciept = await txResponse.wait()
-      console.log("Tx: ", txReciept)
-      const newSbtAddress = txReciept.logs[1].address
+    await updateProjectData({ sbtTokenName: sbtTokenName, sbtAddress: sbtAddress })
 
-      const headers = new Headers()
-      headers.append("Content-Type", "application/json")
-      if (process.env.NEXT_PUBLIC_BICONOMY_DASHBOARD_AUTH_KEY) {
-        headers.append("authToken", process.env.NEXT_PUBLIC_BICONOMY_DASHBOARD_AUTH_KEY)
-      }
-      if (process.env.NEXT_PUBLIC_BICONOMY_API_KEY) {
-        headers.append("apiKey", process.env.NEXT_PUBLIC_BICONOMY_API_KEY)
-      }
-      fetch(
-        "https://paymaster-dashboard-backend.prod.biconomy.io/api/v1/public/sdk/smart-contract",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            name: "Securities",
-            address: newSbtAddress,
-            abi: JSON.stringify(securitiesAbi),
-            whitelistedMethods: ["mint"],
-          }),
-          headers: headers,
-        }
-      )
-        .then((response) => response.json())
-        .then((json) => console.log(json))
-        .catch((err) => console.log(err))
-
-      await updateProjectData({ sbtTokenName: sbtTokenName, sbtAddress: newSbtAddress })
-
-      if (!editingProject || !editingProject?.id) {
-        return
-      }
-      //set editing project globally
-      setEditingProject({
-        ...editingProject,
-        sbtTokenName: sbtTokenName,
-        sbtAddress: newSbtAddress,
-      })
-
-      setIsLoading(false)
-      router.push(PATHS.NEW_PROJECT.ABOUT_VAULT)
-    } catch (error) {
-      console.log(error)
+    if (!editingProject || !editingProject?.id) {
+      return
     }
+    //set editing project globally
+    setEditingProject({
+      ...editingProject,
+      sbtTokenName: sbtTokenName,
+      sbtAddress: sbtAddress,
+    })
+
+    router.push(PATHS.NEW_PROJECT.ABOUT_VAULT)
   }
 
   // SBTのmetadataの作成
@@ -187,7 +140,7 @@ export default function NewProjectAboutSbtPage() {
       <form>
         <div>
           <label>
-            <h3>Token Name</h3>
+            <p>Token Name</p>
             <input type="text" placeholder="Token name..." {...register("sbtTokenName")} />
             {errors.sbtTokenName && <ErrorMessage>{errors.sbtTokenName?.message}</ErrorMessage>}
           </label>
@@ -196,22 +149,22 @@ export default function NewProjectAboutSbtPage() {
 
         <div>
           <label>
-            <h3>Token Image</h3>
+            <p>Token Image</p>
           </label>
           <input type="file" accept=".jpg, .jpeg, .png" {...register("sbtImage")} />
           {errors.sbtImage && <ErrorMessage>{errors.sbtImage?.message}</ErrorMessage>}
         </div>
         <Spacer size={20} />
 
-        {isLoading ? (
-          <LoadingCircle />
-        ) : (
-          <>
-            <Button isEnabled={isButtonEnabled} isLoading={isLoading} onClick={onDeploySbt}>
-              Deploy SBT
-            </Button>
-          </>
-        )}
+        <Web3Button
+          contractAddress={sbtFactoryAddr}
+          contractAbi={securitiesFactoryAbi}
+          action={onDeploySbt}
+          onError={(error) => console.log(error)}
+          isDisabled={!isButtonEnabled}
+        >
+          Deploy SBT
+        </Web3Button>
       </form>
     </PageContainer>
   )

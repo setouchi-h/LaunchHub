@@ -147,7 +147,7 @@ export default function NewProjectAboutProjectPage() {
       <form>
         <div>
           <label>
-            <h3>Project Name</h3>
+            <p>Project Name</p>
             <input type="text" placeholder="Project name..." {...register("title")} />
             {errors.title && <ErrorMessage>{errors.title?.message}</ErrorMessage>}
           </label>
@@ -156,7 +156,7 @@ export default function NewProjectAboutProjectPage() {
 
         <div>
           <label>
-            <h3>Cover Image</h3>
+            <p>Cover Image</p>
           </label>
           <input type="file" accept=".jpg, .jpeg, .png" {...register("image")} />
           {errors.image && <ErrorMessage>{errors.image?.message}</ErrorMessage>}
@@ -165,13 +165,7 @@ export default function NewProjectAboutProjectPage() {
 
         <div>
           <label>
-            <h3>Details</h3>
-            <p>
-              Please provide a thorough and detailed description. The information you provide will
-              serve as a reference for the AI to generate tasks. Include as much specific and
-              comprehensive information as possible to ensure the AI&apos;s understanding of your
-              project.
-            </p>
+            <p>Details</p>
             <textarea placeholder="Details..." {...register("details")} />
             {errors.details && <ErrorMessage>{errors.details?.message}</ErrorMessage>}
           </label>
@@ -180,7 +174,7 @@ export default function NewProjectAboutProjectPage() {
 
         <div>
           <label>
-            <h3>Twitter</h3>
+            <p>Twitter</p>
             <input type="text" placeholder="Twitter URL..." {...register("twitterUrl")} />
             {errors.twitterUrl && <ErrorMessage>{errors.twitterUrl?.message}</ErrorMessage>}
           </label>
@@ -189,7 +183,7 @@ export default function NewProjectAboutProjectPage() {
 
         <div>
           <label>
-            <h3>Discord</h3>
+            <p>Discord</p>
             <input type="text" placeholder="Discord URL..." {...register("discordUrl")} />
             {errors.discordUrl && <ErrorMessage>{errors.discordUrl?.message}</ErrorMessage>}
           </label>
