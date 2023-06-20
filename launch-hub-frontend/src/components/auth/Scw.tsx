@@ -9,6 +9,7 @@ import Button from "../ui/Button"
 import { SmartAccountContext, SocialLoginContext } from "./AuthProvider"
 import Spacer from "../ui/Spacer"
 import LoadingCircle from "../ui/LoadingCircle/LoadingCircle"
+import Image from "next/image"
 
 export const truncateStr = (fullStr: string, strLen: number) => {
   if (fullStr.length <= strLen) return
@@ -135,7 +136,7 @@ export default function Scw({
       {!user?.smartAccount &&
         (!isSetting ? (
           <div css={s.container}>
-            <h1>LaunchHub</h1>
+            <Image src="/images/launchHub-image.png" alt="LaunchHub" width={800} height={480} />
             <Spacer size={30} />
             <Button onClick={login}>Login</Button>
             <Spacer size={20} />
